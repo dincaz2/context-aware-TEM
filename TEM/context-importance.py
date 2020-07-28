@@ -13,6 +13,12 @@ def load_json(path):
         field_dict = json.load(json_str)
     return field_dict
 
+#change the path accordingly
+def pickle_load_model(args):
+    model_path = f'../Data/Model/{args.city}_{args.cate}_attr/tem_model.dump'
+    with open(model_path, 'rb') as file:
+        return pickle.load(file)
+
 def get_opposite_context_iid(context2iid_map, iid2contexts_map, orig_context_iid):
     original_iid = str(context2iid_map[orig_context_iid])
     context_iids = iid2contexts_map[original_iid]
@@ -21,11 +27,6 @@ def get_opposite_context_iid(context2iid_map, iid2contexts_map, orig_context_iid
             return context_iid
     return orig_context_iid
 
-def pickle_load_model(args):
-    model_path = f'../Data/Model/{args.city}_{args.cate}_attr/tem_model.dump'
-    with open(model_path, 'rb') as file:
-        return pickle.load(file)
-
 def is_context_feature_important(args, uid, iid, threshold):
     # mappers from context iid to original iid and from original iid to its contexts iids
     map_str = f'../Data/Map/{args.city}_{args.cate}'
@@ -33,7 +34,6 @@ def is_context_feature_important(args, uid, iid, threshold):
     iid2contexts_map = load_json(map_str + '_iid2contexts_dict.json')
 
     other_iid = get_opposite_context_iid(context2iid_map, iid2contexts_map, iid)
-
     loaded_model = pickle_load_model(args)
 
     initial_pred = loaded_model.predict(uid, iid)
