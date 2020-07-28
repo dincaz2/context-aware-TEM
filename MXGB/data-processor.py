@@ -33,17 +33,6 @@ def split_by_season(df):
     return df
 
 
-def select_features(df, user_features, item_features, label):
-    df = df.copy()
-
-    df['rdatetime'] = pd.to_datetime(df['rtime'], infer_datetime_format=True)
-    df.sort_values('rdatetime', inplace=True)
-
-    df[label] = df['rrate'].fillna('0.0').map(lambda rate: 1 if rate == '5.0' else 0)
-
-    return df[user_features + item_features + ['uid_index', 'iid', 'iid_context', label]]
-
-
 def process_df(args, df):
     print('Started processing df...')
     df = df.copy()
@@ -107,7 +96,16 @@ def process_df(args, df):
 
     return df.drop(columns=compound_columns), user_features, item_features
 
+def select_features(df, user_features, item_features, label):
+    df = df.copy()
+    df['rdatetime'] = pd.to_datetime(df['rtime'], infer_datetime_format=True)
+    df.sort_values('rdatetime', inplace=True)
 
+    df[label] = df['rrate'].fillna('0.0').map(lambda rate: 1 if rate == '5.0' else 0)
+
+    return df[user_features + item_features + ['uid_index', 'iid', 'iid_context', label]]
+ 
+                                 
 def write_field_dict(args, user_num, item_num, field_num=0):
     field_dict = {'user_num': user_num, 'item_num': item_num, 'field_num': field_num}
 
@@ -143,6 +141,10 @@ def write_map(args, df, name, column, features):
     arr = np.array(df)
     np.savetxt(path, arr, fmt='%d')
 
+def write_split(args, df, name):
+    path = f'../Data/Split-final/{args.city}_{args.cate}_{name}.split'
+    #     df = df[['uid_index', 'iid', 'label']]
+    np.savetxt(path, df, fmt='%d')
 
 def split_pos_df_tvt(df):
     df = df[['uid_index', 'iid_context', 'label']]
@@ -173,7 +175,6 @@ def split_pos_df_tvt(df):
 
     return train, valid, test
 
-
 def populate_with_uninteracted(df, uid_iids_map, all_iids):
     new_df = None
     for index, row in tqdm(list(df.iterrows())):
@@ -189,12 +190,6 @@ def populate_with_uninteracted(df, uid_iids_map, all_iids):
             new_df = new_df.append(row_df)
 
     return new_df
-
-
-def write_split(args, df, name):
-    path = f'../Data/Split-final/{args.city}_{args.cate}_{name}.split'
-    #     df = df[['uid_index', 'iid', 'label']]
-    np.savetxt(path, df, fmt='%d')
 
 
 def main(args):
@@ -217,11 +212,13 @@ def main(args):
     uid_iids_map = {uid: set(group['iid_context'].tolist()) for uid, group in df4.groupby('uid_index')}
     all_iids = set(df4['iid_context'].unique().tolist())
 
+    #split to train validation and test
     train, valid, test = split_pos_df_tvt(df4)
     train = populate_with_uninteracted(train, uid_iids_map, all_iids)
     valid = populate_with_uninteracted(valid, uid_iids_map, all_iids)
     test = populate_with_uninteracted(test, uid_iids_map, all_iids)
 
+    #make sure to save the data seperated
     write_split(args, train, 'Train')
     write_split(args, valid, 'Valid')
     write_split(args, test, 'Test')
