@@ -2,11 +2,24 @@ import math
 import heapq # for retrieval topK
 import numpy as np
 
+def get_hit_ratio(rank_list, target_item):
+    for item in rank_list:
+        if item == target_item:
+            return 1
+    return 0
+
+
+def get_ndcg(rank_list, target_item):
+    for i, item in enumerate(rank_list):
+        if item == target_item:
+            return math.log(2) / math.log(i + 2)
+    return 0
+
 
 def eval_model_pro(y_gnd, y_pre, K, row_len):
     new_len = int(y_gnd.shape[0] / row_len) * row_len
-    y_gnd = y_gnd[:new_len]
     y_pre = y_pre[:new_len]
+    y_gnd = y_gnd[:new_len]
 
     mat_gnd = np.reshape(y_gnd, (-1, row_len))
     mat_pre = np.reshape(y_pre, (-1, row_len))
@@ -46,17 +59,3 @@ def eval_one_rating(i_gnd, i_pre, K):
     ndcg = get_ndcg(rank_list, target_item)
 
     return hit, ndcg
-
-
-def get_hit_ratio(rank_list, target_item):
-    for item in rank_list:
-        if item == target_item:
-            return 1
-    return 0
-
-
-def get_ndcg(rank_list, target_item):
-    for i, item in enumerate(rank_list):
-        if item == target_item:
-            return math.log(2) / math.log(i + 2)
-    return 0
